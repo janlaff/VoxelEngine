@@ -86,16 +86,14 @@ func main() {
 		panic(err)
 	}
 
-	gl.ClearColor(0.1, 0.2, 0.3, 1.0)
+	gl.ClearColor(0.67, 0.84, 0.9, 1.0)
 	gl.UseProgram(program)
 
-	var meshData MeshData
-	meshData.AddFrontFace(mgl32.Vec3{0, 0, 0})
-	meshData.AddRightFace(mgl32.Vec3{0, 0, 0})
-	meshData.AddBackFace(mgl32.Vec3{0, 0, 0})
-	meshData.AddLeftFace(mgl32.Vec3{0, 0, 0})
-	meshData.AddTopFace(mgl32.Vec3{0, 0, 0})
-	meshData.AddBottomFace(mgl32.Vec3{0, 0, 0})
+	var chunk Chunk
+	chunk.data[0] = true
+	chunk.data[1] = true
+	meshData := chunk.CreateMesh()
+	//meshData.AddCube(mgl32.Vec3{0, 0, 0})
 
 	var vertexBuffer uint32
 	gl.GenBuffers(1, &vertexBuffer)
@@ -138,11 +136,11 @@ func main() {
 		fps.Update()
 
 		rotationSpeed := glfw.GetTime() * 0.3
-		radius := float32(2)
+		radius := float32(4)
 		camX := math.Sin(float32(rotationSpeed)) * radius
 		camZ := math.Cos(float32(rotationSpeed)) * radius
 		camera.SetPosition(mgl32.Vec3{
-			camX, -1, camZ,
+			camX, 1, camZ,
 		})
 		camera.LookAt(mgl32.Vec3{
 			0, 0, 0,

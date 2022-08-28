@@ -7,6 +7,15 @@ type MeshData struct {
 	triangles []uint32
 }
 
+func (m *MeshData) AddCube(position mgl32.Vec3) {
+	m.AddFrontFace(position)
+	m.AddRightFace(position)
+	m.AddBackFace(position)
+	m.AddLeftFace(position)
+	m.AddTopFace(position)
+	m.AddBottomFace(position)
+}
+
 func (m *MeshData) AddVertex(vertex mgl32.Vec3) {
 	m.vertices = append(m.vertices, vertex.X(), vertex.Y(), vertex.Z())
 }

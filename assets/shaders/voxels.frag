@@ -51,21 +51,29 @@ vec2 intersectVoxel(vec3 center, Ray ray) {
 }
 
 vec3 rayColor(Ray ray) {
-    float t = intersectSphere(vec3(0, 0, 0), 0.25, ray);
-    if (t > 0) {
-        vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, 0));
-        return 0.5 * vec3(n.x+1, n.y+1, n.z+1);
+    vec3 color = vec3(0.5, 0.2, 0.4);
+    float distance = 1.0/0.0;
+
+    vec3 t1Pos = vec3(1, 0, 0);
+    vec3 t2Pos = vec3(0, 0, 0);
+    float t1 = intersectSphere(t1Pos, 0.5, ray);
+    float t2 = intersectSphere(t2Pos, 0.25, ray);
+
+    if (t1 > 0 && t1 < distance) {
+        distance = t1;
+        color = vec3(0.1, 0.1, 0.1);
     }
 
-    t = intersectSphere(vec3(0, 0, -1), 0.5, ray);
-    if (t > 0) {
-        vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, 0));
-        return 0.5 * vec3(n.x+1, n.y+1, n.z+1);
+    if (t2 > 0 && t2 < distance) {
+        distance = t2;
+        color = vec3(0.9, 0.9, 0.9);
     }
 
-    vec3 unitDirection = normalize(ray.direction);
-    t = 0.5*(unitDirection.y + 1.0);
-    return (1.0-t)*vec3(1, 1, 1)+t*vec3(0.5, 0.7, 1.0);
+    if (isinf(distance)) {
+        discard;
+    }
+
+    return color;
 }
 
 void main() {
