@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/go-gl/gl/v4.4-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -98,27 +99,33 @@ func main() {
 
 	cameraPos := mgl32.Vec3{2, 2, 2}
 	mvp := calcModelViewProjection(cameraPos, 800, 600)
+	inverseMvp := mvp.Inv()
 
 	mvpLoc := gl.GetUniformLocation(program, gl.Str("mvp\x00"))
+	inverseMvpLoc := gl.GetUniformLocation(program, gl.Str("inverseMvp\x00"))
 	cameraPosLoc := gl.GetUniformLocation(program, gl.Str("cameraPos\x00"))
 	screenWidthLoc := gl.GetUniformLocation(program, gl.Str("screenWidth\x00"))
 	screenHeightLoc := gl.GetUniformLocation(program, gl.Str("screenHeight\x00"))
 
 	gl.UseProgram(program)
 	gl.UniformMatrix4fv(mvpLoc, 1, false, &mvp[0])
+	gl.UniformMatrix4fv(inverseMvpLoc, 1, false, &inverseMvp[0])
 	gl.Uniform3fv(cameraPosLoc, 1, &cameraPos[0])
 	gl.Uniform1f(screenWidthLoc, 800)
 	gl.Uniform1f(screenHeightLoc, 600)
 
-	gl.ClearColor(0.1, 0.1, 0.8, 1.0)
-
 	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
 		gl.Viewport(0, 0, int32(width), int32(height))
 		mvp = calcModelViewProjection(cameraPos, float32(width), float32(height))
+		inverseMvp := mvp.Inv()
 		gl.UniformMatrix4fv(mvpLoc, 1, false, &mvp[0])
+		gl.UniformMatrix4fv(inverseMvpLoc, 1, false, &inverseMvp[0])
 		gl.Uniform1f(screenWidthLoc, float32(width))
 		gl.Uniform1f(screenHeightLoc, float32(height))
 	})
+
+	prevTime := glfw.GetTime()
+	frameCount := 0
 
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -131,6 +138,15 @@ func main() {
 
 		if window.GetKey(glfw.KeyQ) == glfw.Press {
 			break
+		}
+
+		currentTime := glfw.GetTime()
+		frameCount++
+
+		if currentTime-prevTime >= 1 {
+			fmt.Println("Fps: ", frameCount)
+			frameCount = 0
+			prevTime = currentTime
 		}
 	}
 }

@@ -2,7 +2,7 @@
 
 out vec4 color;
 
-uniform mat4 mvp;
+uniform mat4 inverseMvp;
 uniform vec3 cameraPos;
 uniform float screenWidth;
 uniform float screenHeight;
@@ -50,7 +50,7 @@ void main() {
         1
     );
 
-    vec4 clip = inverse(mvp) * ndc;
+    vec4 clip = inverseMvp * ndc;
     vec4 hit = vec4((clip / clip.w).xyz, 1);
 
     Ray eye;
