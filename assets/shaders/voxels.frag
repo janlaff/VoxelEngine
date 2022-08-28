@@ -3,7 +3,7 @@
 out vec4 color;
 
 uniform mat4 mvp;
-uniform mat4 inverseViewProjection;
+uniform vec3 cameraPos;
 uniform float screenWidth;
 uniform float screenHeight;
 
@@ -31,9 +31,9 @@ float sphereDistance(vec3 center, float radius, Ray ray) {
 }
 
 vec3 rayColor(Ray ray) {
-    float t = sphereDistance(vec3(0, 0, -1), 0.5, ray);
+    float t = sphereDistance(vec3(0, 0, 0), 0.5, ray);
     if (t > 0) {
-        vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, -1));
+        vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, 0));
         return 0.5 * vec3(n.x+1, n.y+1, n.z+1);
     }
 
@@ -43,25 +43,19 @@ vec3 rayColor(Ray ray) {
 }
 
 void main() {
-    float aspectRatio = 16.0 / 9.0;
-    float width = 800;
-    float height = 600;
+    vec4 ndc = vec4(
+        (gl_FragCoord.x / screenWidth - 0.5) * 2,
+        (gl_FragCoord.y / screenHeight - 0.5) * 2,
+        (gl_FragCoord.z - 0.5) * 2,
+        1
+    );
 
-    float viewportHeight = 2.0;
-    float viewportWidth = aspectRatio * viewportHeight;
-    float focalLength = 1;
-
-    vec3 origin = vec3(0);
-    vec3 horizontal = vec3(viewportWidth, 0, 0);
-    vec3 vertical = vec3(0, viewportHeight, 0);
-    vec3 lowerLeftCorner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focalLength);
-
-    float u = gl_FragCoord.x / (width - 1);
-    float v = gl_FragCoord.y / (height - 1);
+    vec4 clip = inverse(mvp) * ndc;
+    vec4 hit = vec4((clip / clip.w).xyz, 1);
 
     Ray eye;
-    eye.origin = origin;
-    eye.direction = lowerLeftCorner + u*horizontal + v*vertical - origin;
+    eye.origin = cameraPos;
+    eye.direction = hit.xyz - eye.origin;
 
     color = vec4(rayColor(eye), 1.0);
 }

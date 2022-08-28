@@ -14,6 +14,19 @@ var vertexShaderSource string
 //go:embed assets/shaders/voxels.frag
 var fragmentShaderSource string
 
+func calcModelViewProjection(cameraPos mgl32.Vec3, width float32, height float32) mgl32.Mat4 {
+	projection := mgl32.Perspective(mgl32.DegToRad(45), width/height, 0.1, 100.0)
+	view := mgl32.LookAt(
+		cameraPos.X(), cameraPos.Y(), cameraPos.Z(),
+		0, 0, 0,
+		0, 1, 0,
+	)
+	model := mgl32.Ident4()
+	mvp := projection.Mul4(view).Mul4(model)
+
+	return mvp
+}
+
 func main() {
 	runtime.LockOSThread()
 
@@ -27,10 +40,6 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-
-	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
-		gl.Viewport(0, 0, int32(width), int32(height))
-	})
 
 	vertexShader, err := compileShader(vertexShaderSource+"\x00", gl.VERTEX_SHADER)
 	if err != nil {
@@ -87,23 +96,33 @@ func main() {
 	cameraRight := up.Cross(cameraDirection).Normalize()
 	cameraUp := cameraDirection.Cross(cameraRight)*/
 
-	projection := mgl32.Perspective(45.0, 800/600, 0.1, 100.0)
-	view := mgl32.LookAt(
-		1, 1, 2,
-		0, 0, 0,
-		0, 1, 0,
-	)
-	model := mgl32.Ident4()
-	mvp := projection.Mul4(view).Mul4(model)
+	cameraPos := mgl32.Vec3{2, 2, 2}
+	mvp := calcModelViewProjection(cameraPos, 800, 600)
 
-	mvpLocation := gl.GetUniformLocation(program, gl.Str("mvp\x00"))
+	mvpLoc := gl.GetUniformLocation(program, gl.Str("mvp\x00"))
+	cameraPosLoc := gl.GetUniformLocation(program, gl.Str("cameraPos\x00"))
+	screenWidthLoc := gl.GetUniformLocation(program, gl.Str("screenWidth\x00"))
+	screenHeightLoc := gl.GetUniformLocation(program, gl.Str("screenHeight\x00"))
+
+	gl.UseProgram(program)
+	gl.UniformMatrix4fv(mvpLoc, 1, false, &mvp[0])
+	gl.Uniform3fv(cameraPosLoc, 1, &cameraPos[0])
+	gl.Uniform1f(screenWidthLoc, 800)
+	gl.Uniform1f(screenHeightLoc, 600)
 
 	gl.ClearColor(0.1, 0.1, 0.8, 1.0)
+
+	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		gl.Viewport(0, 0, int32(width), int32(height))
+		mvp = calcModelViewProjection(cameraPos, float32(width), float32(height))
+		gl.UniformMatrix4fv(mvpLoc, 1, false, &mvp[0])
+		gl.Uniform1f(screenWidthLoc, float32(width))
+		gl.Uniform1f(screenHeightLoc, float32(height))
+	})
 
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(mvpLocation, 1, false, &mvp[0])
 		gl.BindVertexArray(vao)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(planeVertices)/3))
 
