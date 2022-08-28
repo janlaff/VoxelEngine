@@ -1,9 +1,9 @@
 #version 440 core
 
+in mat4 inverseMVP;
 out vec4 color;
 
-uniform mat4 inverseMvp;
-uniform vec3 cameraPos;
+uniform vec3 cameraPosition;
 uniform float screenWidth;
 uniform float screenHeight;
 
@@ -50,11 +50,11 @@ void main() {
         1
     );
 
-    vec4 clip = inverseMvp * ndc;
+    vec4 clip = inverseMVP * ndc;
     vec4 hit = vec4((clip / clip.w).xyz, 1);
 
     Ray eye;
-    eye.origin = cameraPos;
+    eye.origin = cameraPosition;
     eye.direction = hit.xyz - eye.origin;
 
     color = vec4(rayColor(eye), 1.0);
