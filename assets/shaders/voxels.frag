@@ -6,6 +6,13 @@ out vec4 color;
 uniform vec3 cameraPosition;
 uniform float screenWidth;
 uniform float screenHeight;
+uniform bool showChunk;
+
+//uniform sampler3D voxelData;
+const float VOXEL_SIZE = 1.0/16.0;
+
+uniform bool voxelSolid[16*16*16];
+uniform vec3 voxelColors[16*16*16];
 
 struct Ray {
     vec3 origin;
@@ -42,7 +49,7 @@ vec2 intersectBox(vec3 boxMin, vec3 boxMax, Ray ray) {
 }
 
 vec2 intersectVoxel(vec3 center, Ray ray) {
-    float voxelSize = 0.05;
+    float voxelSize = 1.0/16.0;
     vec3 dims = vec3(voxelSize, voxelSize, voxelSize);
     vec3 boxMin = center - dims;
     vec3 boxMax = center + dims;
@@ -50,38 +57,45 @@ vec2 intersectVoxel(vec3 center, Ray ray) {
     return intersectBox(boxMin, boxMax, ray);
 }
 
+vec3 traverseVoxel(Ray ray) {
+    vec3 entryPoint = walkRay(ray, 1.0 + 0.5 * VOXEL_SIZE);
+
+    return vec3(0, 0, 0);
+}
+
 vec3 rayColor(Ray ray) {
-    vec3 color = vec3(0.5, 0.2, 0.4);
     float distance = 1.0/0.0;
+    vec3 hit;
 
     vec3 t1Pos = vec3(1, 0, 0);
     vec3 t2Pos = vec3(0, 0, 0);
-    float t1 = intersectSphere(t1Pos, 0.5, ray);
+    vec2 t1 = intersectVoxel(t1Pos, ray);//intersectSphere(t1Pos, 0.5, ray);
     float t2 = intersectSphere(t2Pos, 0.25, ray);
 
-    if (t1 > 0 && t1 < distance) {
-        distance = t1;
-        color = vec3(0.1, 0.1, 0.1);
+    if (t1.x < t1.y) {
+        distance = min(t1.x, t1.y);
+        hit = t1Pos;
     }
 
     if (t2 > 0 && t2 < distance) {
         distance = t2;
-        color = vec3(0.9, 0.9, 0.9);
+        hit = t2Pos;
     }
 
-    if (isinf(distance)) {
+    if (!showChunk && isinf(distance)) {
         discard;
     }
 
-    return color;
+    vec3 n = normalize(walkRay(ray, distance) - hit);
+    return 0.5*vec3(n.x+1, n.y+1, n.z+1);
 }
 
 void main() {
     vec4 ndc = vec4(
-        (gl_FragCoord.x / screenWidth - 0.5) * 2,
-        (gl_FragCoord.y / screenHeight - 0.5) * 2,
-        (gl_FragCoord.z - 0.5) * 2,
-        1
+    (gl_FragCoord.x / screenWidth - 0.5) * 2,
+    (gl_FragCoord.y / screenHeight - 0.5) * 2,
+    (gl_FragCoord.z - 0.5) * 2,
+    1
     );
 
     vec4 clip = inverseMVP * ndc;
@@ -89,7 +103,7 @@ void main() {
 
     Ray eye;
     eye.origin = cameraPosition;
-    eye.direction = normalize(hit.xyz - eye.origin);
+    eye.direction = hit.xyz - eye.origin;
 
-    color = vec4(rayColor(eye), 1.0);
+    color = vec4(traverseVoxel(eye), 1.0);
 }
