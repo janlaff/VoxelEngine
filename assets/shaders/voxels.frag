@@ -16,7 +16,7 @@ vec3 walkRay(Ray ray, float distance) {
     return ray.origin + ray.direction * distance;
 }
 
-float sphereDistance(vec3 center, float radius, Ray ray) {
+float intersectSphere(vec3 center, float radius, Ray ray) {
     vec3 oc = ray.origin - center;
     float a = dot(ray.direction, ray.direction);
     float b = 2 * dot(oc, ray.direction);
@@ -30,8 +30,34 @@ float sphereDistance(vec3 center, float radius, Ray ray) {
     }
 }
 
+vec2 intersectBox(vec3 boxMin, vec3 boxMax, Ray ray) {
+    vec3 tMin = (boxMin - ray.origin) / ray.direction;
+    vec3 tMax = (boxMax - ray.origin) / ray.direction;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    return vec2(tNear, tFar);
+}
+
+vec2 intersectVoxel(vec3 center, Ray ray) {
+    float voxelSize = 0.05;
+    vec3 dims = vec3(voxelSize, voxelSize, voxelSize);
+    vec3 boxMin = center - dims;
+    vec3 boxMax = center + dims;
+
+    return intersectBox(boxMin, boxMax, ray);
+}
+
 vec3 rayColor(Ray ray) {
-    float t = sphereDistance(vec3(0, 0, 0), 0.5, ray);
+    float t = intersectSphere(vec3(0, 0, 0), 0.25, ray);
+    if (t > 0) {
+        vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, 0));
+        return 0.5 * vec3(n.x+1, n.y+1, n.z+1);
+    }
+
+    t = intersectSphere(vec3(0, 0, -1), 0.5, ray);
     if (t > 0) {
         vec3 n = normalize(walkRay(ray, t) - vec3(0, 0, 0));
         return 0.5 * vec3(n.x+1, n.y+1, n.z+1);
@@ -55,7 +81,7 @@ void main() {
 
     Ray eye;
     eye.origin = cameraPosition;
-    eye.direction = hit.xyz - eye.origin;
+    eye.direction = normalize(hit.xyz - eye.origin);
 
     color = vec4(rayColor(eye), 1.0);
 }

@@ -14,7 +14,7 @@ type Camera struct {
 
 func (c *Camera) SetModel(model mgl32.Mat4) {
 	modelLocation := gl.GetUniformLocation(c.programId, gl.Str("model\x00"))
-	gl.Uniform4fv(modelLocation, 1, &model[0])
+	gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
 }
 
 func (c *Camera) SetPosition(position mgl32.Vec3) {
